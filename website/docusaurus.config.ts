@@ -24,6 +24,9 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/HorizonRepublic/nestjs-jetstream/tree/main/website/',
+          showLastUpdateTime: true,
+          showLastUpdateAuthor: true,
+          
         },
         blog: false,
         theme: { customCss: './src/css/custom.css' },
@@ -57,6 +60,21 @@ const config: Config = {
           index: '{projectName}',
           member: '{name}',
           module: '{name}',
+        },
+      },
+    ],
+    'docusaurus-plugin-llms',
+    [
+      '@coffeecup_tech/docusaurus-plugin-structured-data',
+      {
+        verbose: true,
+        docsDir: 'docs',
+        baseSchema: {
+          organization: {
+            '@type': 'Organization',
+            name: 'Horizon Republic',
+            url: '${DOCUSAURUS_CONFIG_URL}',
+          },
         },
       },
     ],
@@ -114,8 +132,8 @@ const config: Config = {
           title: 'Docs',
           items: [
             { label: 'Getting Started', to: '/docs/getting-started/installation' },
-            { label: 'Messaging Patterns', to: '/docs/patterns/rpc' },
-            { label: 'Guides', to: '/docs/guides/record-builder' },
+            { label: 'Core Concepts', to: '/docs/patterns/events' },
+            { label: 'Going to Production', to: '/docs/getting-started/module-configuration' },
           ],
         },
         {

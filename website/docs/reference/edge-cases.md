@@ -1,6 +1,12 @@
 ---
 sidebar_position: 3
 title: Edge Cases & FAQ
+schema:
+  type: Article
+  headline: Edge Cases & FAQ
+  description: "Common questions and non-obvious behaviors of the transport."
+  datePublished: "2026-03-21"
+  dateModified: "2026-04-02"
 ---
 
 # Edge Cases & FAQ
@@ -16,7 +22,7 @@ This transport does not implement fire-and-forget on Core NATS (non-JetStream) s
 For JetStream-based fire-and-forget, use `client.emit()` — this publishes an event to the event stream without expecting a response:
 
 ```typescript
-this.client.emit('order.created', { orderId: '123' });
+await lastValueFrom(this.client.emit('order.created', { orderId: '123' }));
 ```
 
 ## Publisher-Only Mode
@@ -39,7 +45,7 @@ This is ideal for API gateways and services that act purely as event producers.
 
 **Q: Why does the broadcast stream name have no service prefix?**
 
-The broadcast stream is named `broadcast-stream` (no service prefix) because it is **shared across all services** in the cluster. Every service that registers `@EventPattern('broadcast:...')` handlers creates its own durable consumer on this same stream.
+The broadcast stream is named `broadcast-stream` (no service prefix) because it is **shared across all services** in the cluster. Every service that registers `@EventPattern('...', { broadcast: true })` handlers creates its own durable consumer on this same stream.
 
 This means:
 - Any service can publish to `broadcast.{pattern}`
@@ -54,11 +60,11 @@ See [Broadcast Events](/docs/patterns/broadcast) for usage details.
 
 The transport **throws immediately** on startup if the initial connection fails. This is intentional — your NestJS application will fail to bootstrap, which lets orchestrators (Kubernetes, Docker Compose) detect and restart the service.
 
-**After a successful initial connection**, the nats.js client handles automatic reconnection transparently. The transport monitors connection status events and emits lifecycle hooks (`Disconnect`, `Reconnect`) so your application can react. See [Lifecycle Hooks](/docs/guides/lifecycle-hooks) for details.
+**After a successful initial connection**, the NATS client handles automatic reconnection transparently. The transport monitors connection status events and emits lifecycle hooks (`Disconnect`, `Reconnect`) so your application can react. See [Lifecycle Hooks](/docs/guides/lifecycle-hooks) for details.
 
 ```typescript
 // Connection refused at startup → throws, app fails to start
-// Connection lost after startup → auto-reconnect with nats.js built-in logic
+// Connection lost after startup → auto-reconnect with NATS client built-in logic
 ```
 
 ## Observable Return Values in Handlers
@@ -95,6 +101,18 @@ The backoff formula is: `min(100ms * 2^failures, 30,000ms)`
 
 This applies to all consumer types: event, command, broadcast, and ordered. The transport emits a `TransportEvent.Error` hook on each failure so you can monitor consumer health. See [Lifecycle Hooks](/docs/guides/lifecycle-hooks).
 
+**Consumer auto-recreation:** If a consumer is deleted, the transport automatically recreates it and resumes consumption. Common deletion scenarios include:
+
+- Manual deletion via NATS CLI or admin tools
+- Stream recreation during [migration](/docs/guides/stream-migration)
+- NATS cluster state loss
+
+The recovery is **migration-aware**: if a migration backup stream exists (another pod is mid-migration), the consumer is NOT recreated. Instead, self-healing waits with exponential backoff until migration completes and the backup is cleaned up. This prevents consumers from interfering with message restoration on workqueue streams.
+
+During rolling updates, recovery never overwrites a newer pod's consumer configuration — if the consumer already exists (another pod recreated it), it is used as-is without config changes.
+
+Ordered consumers are excluded from auto-recreation — they are ephemeral and managed internally by the nats.js client.
+
 ## NATS Header Size Limits
 
 **Q: Are there limits on custom headers?**
@@ -108,13 +126,13 @@ When using `JetstreamRecordBuilder.setHeader()`, keep in mind:
 
 See [Record Builder](/docs/guides/record-builder) for custom header usage.
 
-## nats.js DeliverPolicy.All Workaround
+## DeliverPolicy.All Workaround
 
 **Q: Why does the ordered consumer not pass `DeliverPolicy.All` explicitly?**
 
-There is a known issue in nats.js (v2.29.x) where explicitly passing `DeliverPolicy.All` to an ordered consumer leaves `opt_start_seq` in the consumer configuration, which causes `consume()` to hang indefinitely.
+There is a known issue in the NATS JavaScript SDK where explicitly passing `DeliverPolicy.All` to an ordered consumer leaves `opt_start_seq` in the consumer configuration, which causes `consume()` to hang indefinitely. This was originally observed in the `nats` package v2.29.x and the workaround is retained for safety in `@nats-io/jetstream` v3.x.
 
-The transport works around this by **omitting** the `deliver_policy` field when it would be `DeliverPolicy.All` (the default). Since nats.js uses `All` as its internal default anyway, the behavior is identical — but the workaround avoids the hanging bug.
+The transport works around this by **omitting** the `deliver_policy` field when it would be `DeliverPolicy.All` (the default). Since the SDK uses `All` as its internal default anyway, the behavior is identical — but the workaround avoids the hanging bug.
 
 If you configure a custom `deliverPolicy` on the ordered consumer (e.g., `DeliverPolicy.Last` or `DeliverPolicy.New`), it will be passed through explicitly:
 
@@ -132,11 +150,11 @@ See [Ordered Events](/docs/patterns/ordered-events) for the full ordered consume
 
 ## Nanosecond precision loss
 
-NATS JetStream uses nanosecond timestamps internally (`int64` in Go), but the nats.js SDK represents them as JavaScript `number` (IEEE 754 float64). Since `Number.MAX_SAFE_INTEGER` is ~9×10¹⁵ and current timestamps in nanos are ~1.7×10¹⁸, **arithmetic on nanosecond values loses ±1ms precision**.
+NATS JetStream uses nanosecond timestamps internally (`int64` in Go), but the `@nats-io/transport-node` SDK represents them as JavaScript `number` (IEEE 754 float64). Since `Number.MAX_SAFE_INTEGER` is ~9x10^15 and current timestamps in nanos are ~1.7x10^18, **arithmetic on nanosecond values loses +/-1ms precision**.
 
 This affects:
-- `ctx.getTimestamp()` — returns `Date` (millisecond precision), accurate to ±1ms
+- `ctx.getTimestamp()` — returns `Date` (millisecond precision), accurate to +/-1ms
 - `toNanos()` helper — output is accurate for typical config values (seconds, minutes), but sub-millisecond precision is not guaranteed
-- `msg.info.timestampNanos` — raw value from nats.js, already truncated before reaching this library
+- `msg.info.timestampNanos` — raw value from the SDK, already truncated before reaching this library
 
-This is a fundamental limitation of the nats.js SDK, not this library. Using `BigInt` internally would not help — nats.js converts to/from `number` at the SDK boundary. For ordering and deduplication, NATS uses stream sequence numbers (integers, always safe) rather than timestamps.
+This is a fundamental limitation of the NATS JavaScript SDK, not this library. Using `BigInt` internally would not help — the SDK converts to/from `number` at the boundary. For ordering and deduplication, NATS uses stream sequence numbers (integers, always safe) rather than timestamps.

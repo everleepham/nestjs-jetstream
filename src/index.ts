@@ -14,6 +14,7 @@ export type {
   OrderedEventOverrides,
   RpcConfig,
   ScheduleRecordOptions,
+  StreamConfigOverrides,
   StreamConsumerOverrides,
   TransportHooks,
 } from './interfaces';
@@ -36,6 +37,7 @@ export { JetstreamHealthIndicator } from './health';
 export {
   streamName,
   buildSubject,
+  buildBroadcastSubject,
   consumerName,
   internalName,
   getClientToken,
