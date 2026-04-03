@@ -300,11 +300,12 @@ export class EventRouter {
     hdrs.set(JetstreamDlqHeader.DeadLetterReason, reason);
     hdrs.set(JetstreamDlqHeader.OriginalSubject, msg.subject);
     hdrs.set(JetstreamDlqHeader.OriginalStream, msg.info.stream);
-   hdrs.set(JetstreamDlqHeader.FailedAt, new Date().toISOString());
+    hdrs.set(JetstreamDlqHeader.FailedAt, new Date().toISOString());
     hdrs.set(JetstreamDlqHeader.DeliveryCount, msg.info.deliveryCount.toString());
 
     try {
       const js = this.connection.getJetStreamClient();
+
       await js.publish(destinationSubject, msg.data, { headers: hdrs });
       this.logger.log(`Message sent to DLQ: ${msg.subject}`);
 
