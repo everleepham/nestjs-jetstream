@@ -7,7 +7,11 @@ import { JetStreamApiError, RetentionPolicy, StorageType } from '@nats-io/jetstr
 import { ConnectionProvider } from '../../../connection';
 import { StreamKind } from '../../../interfaces';
 import type { JetstreamModuleOptions, StreamConfigOverrides } from '../../../interfaces';
-import { DEFAULT_DLQ_STREAM_CONFIG, DEFAULT_EVENT_STREAM_CONFIG, internalName } from '../../../jetstream.constants';
+import {
+  DEFAULT_DLQ_STREAM_CONFIG,
+  DEFAULT_EVENT_STREAM_CONFIG,
+  internalName,
+} from '../../../jetstream.constants';
 
 import { StreamProvider } from '../stream.provider';
 

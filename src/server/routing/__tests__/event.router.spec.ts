@@ -11,7 +11,11 @@ import { MessageProvider } from '../../infrastructure';
 
 import { RpcContext } from '../../../context';
 import { StreamKind } from '../../../interfaces';
-import type { DeadLetterConfig, EventProcessingConfig, JetstreamModuleOptions } from '../../../interfaces';
+import type {
+  DeadLetterConfig,
+  EventProcessingConfig,
+  JetstreamModuleOptions,
+} from '../../../interfaces';
 import { EventRouter } from '../event.router';
 import { PatternRegistry } from '../pattern-registry';
 import { ConnectionProvider } from '../../../connection';
