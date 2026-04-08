@@ -412,7 +412,19 @@ describe(StreamProvider, () => {
           await sut.ensureStreams([StreamKind.Event]);
 
           // Then: both the regular stream AND the DLQ stream are created
-          expect(mockJsm.streams.add).toHaveBeenCalledTimes(2);
+          const expectedDlqName = `${internalName(options.name)}_dlq-stream`;
+
+          expect(mockJsm.streams.info).toHaveBeenCalledWith(expectedDlqName);
+
+          const dlqAddArg = mockJsm.streams.add.mock.calls
+            .map(([config]) => config as Record<string, unknown>)
+            .find((config) => config.name === expectedDlqName);
+
+          expect(dlqAddArg).toMatchObject({
+            name: expectedDlqName,
+            subjects: [expectedDlqName],
+            retention: DEFAULT_DLQ_STREAM_CONFIG.retention,
+          });
         });
       });
 
@@ -522,7 +534,7 @@ describe(StreamProvider, () => {
         // Given: rpc nats mode (no jetstream command stream)
         options = {
           ...options,
-          rpc: { mode: 'core' },
+          rpc: { mode: 'core', stream: { max_age: 99_999 } } as never,
         };
         sut = new StreamProvider(options, connection);
 
@@ -540,6 +552,9 @@ describe(StreamProvider, () => {
 
         // Then: stream created with defaults (no user overrides applied)
         expect(mockJsm.streams.add).toHaveBeenCalledOnce();
+        const addArg = mockJsm.streams.add.mock.calls[0]![0] as Record<string, unknown>;
+
+        expect(addArg.max_age).not.toBe(99_999);
       });
     });
 

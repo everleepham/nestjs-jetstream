@@ -19,6 +19,7 @@ import type {
 import { EventRouter } from '../event.router';
 import { PatternRegistry } from '../pattern-registry';
 import { ConnectionProvider } from '../../../connection';
+import { dlqStreamName, JetstreamDlqHeader } from '../../../jetstream.constants';
 
 describe(EventRouter, () => {
   let sut: EventRouter;
@@ -702,7 +703,19 @@ describe(EventRouter, () => {
 
           // Then: published to DLQ, callback notified, message terminated
           expect(mockJs.publish).toHaveBeenCalled();
+
+          const publishCall = mockJs.publish.mock.calls[0]!;
+
+          expect(publishCall[0]).toBe(dlqStreamName(options.name!));
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.DeadLetterReason)).toBe(
+            'handler error',
+          );
+
           expect(onDeadLetter).toHaveBeenCalled();
+          expect(mockJs.publish.mock.invocationCallOrder[0]!).toBeLessThan(
+            onDeadLetter.mock.invocationCallOrder[0]!,
+          );
+
           expect(msg.term).toHaveBeenCalledWith('Moved to DLQ stream');
           expect(msg.nak).not.toHaveBeenCalled();
         });
@@ -753,6 +766,18 @@ describe(EventRouter, () => {
 
           // Then: publish was called
           expect(mockJs.publish).toHaveBeenCalled();
+
+          const publishCall = mockJs.publish.mock.calls[0]!;
+
+          expect(publishCall[0]).toBe(dlqStreamName(options.name!));
+          expect(publishCall[2].headers.get('X-Trace-Id')).toBe('abc123');
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.DeadLetterReason)).toBe(
+            'handler error',
+          );
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.OriginalSubject)).toBe(
+            'test.subject',
+          );
+
           expect(msg.term).toHaveBeenCalledWith('Moved to DLQ stream');
         });
 
@@ -788,6 +813,14 @@ describe(EventRouter, () => {
 
           // Then: published (reason extracted from error.message)
           expect(mockJs.publish).toHaveBeenCalled();
+
+          const publishCall = mockJs.publish.mock.calls[0]!;
+
+          expect(publishCall[0]).toBe(dlqStreamName(options.name!));
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.DeadLetterReason)).toBe(
+            'specific failure',
+          );
+
           expect(msg.term).toHaveBeenCalledWith('Moved to DLQ stream');
         });
 
@@ -823,6 +856,14 @@ describe(EventRouter, () => {
 
           // Then: published (reason extracted from .message)
           expect(mockJs.publish).toHaveBeenCalled();
+
+          const publishCall = mockJs.publish.mock.calls[0]!;
+
+          expect(publishCall[0]).toBe(dlqStreamName(options.name!));
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.DeadLetterReason)).toBe(
+            'object error',
+          );
+
           expect(msg.term).toHaveBeenCalledWith('Moved to DLQ stream');
         });
 
@@ -860,6 +901,19 @@ describe(EventRouter, () => {
 
           // Then: message is still terminated (hook failure doesn't stop DLQ flow)
           expect(mockJs.publish).toHaveBeenCalled();
+
+          const publishCall = mockJs.publish.mock.calls[0]!;
+
+          expect(publishCall[0]).toBe(dlqStreamName(options.name!));
+          expect(publishCall[2].headers.get(JetstreamDlqHeader.DeadLetterReason)).toBe(
+            'handler error',
+          );
+
+          expect(onDeadLetter).toHaveBeenCalled();
+          expect(mockJs.publish.mock.invocationCallOrder[0]!).toBeLessThan(
+            onDeadLetter.mock.invocationCallOrder[0]!,
+          );
+
           expect(msg.term).toHaveBeenCalledWith('Moved to DLQ stream');
           expect(msg.nak).not.toHaveBeenCalled();
         });
