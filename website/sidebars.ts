@@ -10,7 +10,11 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Getting Started',
       collapsed: false,
-      items: ['getting-started/installation', 'getting-started/quick-start'],
+      items: [
+        'getting-started/why-jetstream',
+        'getting-started/installation',
+        'getting-started/quick-start',
+      ],
     },
     {
       type: 'category',
@@ -30,6 +34,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'patterns/broadcast',
         'patterns/ordered-events',
+        'patterns/handler-metadata',
         'guides/scheduling',
         'guides/per-message-ttl',
       ],

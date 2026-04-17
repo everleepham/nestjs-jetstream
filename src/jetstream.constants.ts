@@ -25,7 +25,13 @@ export const JETSTREAM_CONNECTION = Symbol('JETSTREAM_CONNECTION');
 /** Token for the global Codec instance. */
 export const JETSTREAM_CODEC = Symbol('JETSTREAM_CODEC');
 
-/** Token for the EventBus instance. */
+/**
+ * Token for the EventBus instance.
+ *
+ * @internal Reserved for the library's own DI wiring. Not part of the
+ * public API — user code should register hooks via `forRoot({ hooks })`
+ * instead of injecting the bus directly.
+ */
 export const JETSTREAM_EVENT_BUS = Symbol('JETSTREAM_EVENT_BUS');
 
 /**
@@ -149,6 +155,20 @@ export const DEFAULT_ORDERED_STREAM_CONFIG: Partial<StreamConfig> = {
   duplicate_window: toNanos(2, 'minutes'),
 };
 
+/** Default config for dead-letter queue (DLQ) streams. */
+export const DEFAULT_DLQ_STREAM_CONFIG: Partial<StreamConfig> = {
+  ...baseStreamConfig,
+  retention: RetentionPolicy.Workqueue,
+  allow_rollup_hdrs: false,
+  max_consumers: 100,
+  max_msg_size: 10 * MB,
+  max_msgs_per_subject: 5_000_000,
+  max_msgs: 50_000_000,
+  max_bytes: 5 * GB,
+  max_age: toNanos(30, 'days'),
+  duplicate_window: toNanos(2, 'minutes'),
+};
+
 // ---------------------------------------------------------------------------
 // Default Consumer Configurations
 // ---------------------------------------------------------------------------
@@ -199,6 +219,36 @@ export const DEFAULT_JETSTREAM_RPC_TIMEOUT = 180_000;
 export const DEFAULT_SHUTDOWN_TIMEOUT = 10_000;
 
 // ---------------------------------------------------------------------------
+// Metadata Registry Defaults
+// ---------------------------------------------------------------------------
+
+/** Default KV bucket name for handler metadata. */
+export const DEFAULT_METADATA_BUCKET = 'handler_registry';
+
+/** Default number of KV bucket replicas. */
+export const DEFAULT_METADATA_REPLICAS = 1;
+
+/** Default KV bucket history depth (latest value only). */
+export const DEFAULT_METADATA_HISTORY = 1;
+
+/** Default KV bucket TTL in milliseconds (entries expire unless refreshed). */
+export const DEFAULT_METADATA_TTL = 30_000;
+
+/** Minimum allowed metadata TTL in milliseconds. Prevents tight heartbeat loops. */
+export const MIN_METADATA_TTL = 5_000;
+
+/**
+ * Build a KV key for a handler's metadata entry.
+ *
+ * @param serviceName - Service name from `forRoot({ name })`.
+ * @param kind - Handler's stream kind ({@link StreamKind}).
+ * @param pattern - The message pattern (e.g. `'order.created'`).
+ * @returns KV key (e.g. `orders.ev.order.created`).
+ */
+export const metadataKey = (serviceName: string, kind: StreamKind, pattern: string): string =>
+  `${serviceName}.${kind}.${pattern}`;
+
+// ---------------------------------------------------------------------------
 // Reserved Headers
 // ---------------------------------------------------------------------------
 
@@ -220,6 +270,19 @@ export enum JetstreamHeader {
   CallerName = 'x-caller-name',
   /** Set to `'true'` on error responses so the client can distinguish success from failure. */
   Error = 'x-error',
+}
+
+export enum JetstreamDlqHeader {
+  /** Reason for the message being sent to the DLQ — the last handler error message. */
+  DeadLetterReason = 'x-dead-letter-reason',
+  /** Original NATS subject the message was originally published to */
+  OriginalSubject = 'x-original-subject',
+  /** Source stream name */
+  OriginalStream = 'x-original-stream',
+  /** ISO timestamp of when the message was moved to DLQ */
+  FailedAt = 'x-failed-at',
+  /** Number of times the message has been delivered */
+  DeliveryCount = 'x-delivery-count',
 }
 
 /** Set of header names that are reserved and cannot be set by users. */
@@ -270,6 +333,16 @@ export const buildBroadcastSubject = (pattern: string): string => `broadcast.${p
 export const streamName = (serviceName: string, kind: StreamKind): string => {
   if (kind === StreamKind.Broadcast) return 'broadcast-stream';
   return `${internalName(serviceName)}_${kind}-stream`;
+};
+
+/**
+ * Build the JetStream dead-letter queue stream name for a given service.
+ *
+ * @param serviceName - Service name from `forRoot({ name })`.
+ * @returns DLQ Stream name (e.g. `orders__microservice_dlq-stream`).
+ */
+export const dlqStreamName = (serviceName: string): string => {
+  return `${internalName(serviceName)}_dlq-stream`;
 };
 
 /**
