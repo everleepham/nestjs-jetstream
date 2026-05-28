@@ -349,13 +349,28 @@ export default function Home() {
               <strong>{versionLabel}</strong>
               <span className="lp-eyebrow-sep">·</span>
               <span>MIT</span>
+              <span className="lp-eyebrow-sep">·</span>
+              <a
+                className="lp-eyebrow-badge"
+                href="https://codecov.io/github/HorizonRepublic/nestjs-jetstream"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Code coverage on Codecov"
+              >
+                <img
+                  src="https://img.shields.io/codecov/c/github/HorizonRepublic/nestjs-jetstream?style=flat&label=coverage&color=2c5d3a&labelColor=1a1a1a"
+                  alt="coverage"
+                  height="18"
+                />
+              </a>
             </div>
             <h1 className="lp-hero-title lp-fade-up lp-delay-1">
               nestjs-<span className="lp-accent-mark">jetstream</span>
             </h1>
             <p className="lp-hero-sub lp-fade-up lp-delay-2">
-              The NATS JetStream transport NestJS microservices need — durable, retried, traced —
-              under the same <code>@EventPattern</code> decorators you already use.
+              A NATS JetStream transport for NestJS. Durable streams, bounded retries,
+              and W3C trace context — behind the same <code>@EventPattern</code> decorators
+              you already use.
             </p>
             <div className="lp-hero-ctas lp-fade-up lp-delay-3">
               <Link className="lp-btn lp-btn-primary" to="/docs/getting-started/quick-start">
@@ -398,9 +413,9 @@ export default function Home() {
         <section className="lp-section">
           <div className="lp-container">
             <Reveal>
-              <span className="lp-eyelet">Why this library</span>
-              <h2 className="lp-section-title">Five primitives, one transport.</h2>
-              <p className="lp-section-sub">Each one drops in behind the decorators you already use. Same behavior in dev, staging, and prod.</p>
+              <span className="lp-eyelet">What's inside</span>
+              <h2 className="lp-section-title">Five primitives.</h2>
+              <p className="lp-section-sub">Each one sits behind the NestJS decorators you already use. The library handles the JetStream details.</p>
             </Reveal>
             <Reveal className="lp-pillars">
               <article className="lp-pillar span-3">
@@ -504,9 +519,9 @@ export default function Home() {
         <section className="lp-section">
           <div className="lp-container">
             <Reveal>
-              <span className="lp-eyelet">Live code</span>
-              <h2 className="lp-section-title">Configure once. Decorate handlers. Ship.</h2>
-              <p className="lp-section-sub">Same NestJS surface area you use today. The library does the JetStream work underneath.</p>
+              <span className="lp-eyelet">In code</span>
+              <h2 className="lp-section-title">Register the module, decorate handlers.</h2>
+              <p className="lp-section-sub">The surface area you already use in <code>@nestjs/microservices</code>. JetStream lives underneath.</p>
             </Reveal>
 
             <Reveal className="lp-demo-grid">
@@ -551,30 +566,32 @@ export default function Home() {
         <section className="lp-section">
           <div className="lp-container">
             <Reveal>
-              <span className="lp-eyelet">All capabilities</span>
-              <h2 className="lp-section-title">Everything a professional team expects from production messaging.</h2>
-              <p className="lp-section-sub">Twelve features in one transport. No surprises across environments.</p>
+              <span className="lp-eyelet">Core features</span>
+              <h2 className="lp-section-title">What's in the transport.</h2>
             </Reveal>
             <Reveal className="lp-features">
-              <div className="lp-feature-group">Delivery</div>
-              <FeatureCard to="/docs/patterns/events" icon={<path d="M3 8l3 3 7-7" />} name="At-least-once events" desc="Workqueue retention with explicit ack after handler resolves." />
-              <FeatureCard to="/docs/patterns/ordered-events" icon={<><circle cx="8" cy="8" r="5.5" /><path d="M8 4v4l3 2" /></>} name="Ordered events" desc="Per-key ordering on the same partition with stable subjects." />
-              <FeatureCard to="/docs/patterns/broadcast" icon={<><circle cx="3" cy="8" r="1.5" /><circle cx="13" cy="3" r="1.5" /><circle cx="13" cy="13" r="1.5" /><path d="M4.5 7L12 4M4.5 9L12 12" /></>} name="Broadcast fan-out" desc="One emit reaches every replica; nothing is shared by accident." />
+              <div className="lp-feature-group">Messaging</div>
+              <FeatureCard to="/docs/patterns/events" icon={<path d="M3 8l3 3 7-7" />} name="At-least-once events" desc="Workqueue retention with explicit ack after the handler resolves." />
+              <FeatureCard to="/docs/patterns/broadcast" icon={<><circle cx="3" cy="8" r="1.5" /><circle cx="13" cy="3" r="1.5" /><circle cx="13" cy="13" r="1.5" /><path d="M4.5 7L12 4M4.5 9L12 12" /></>} name="Broadcast fan-out" desc="One emit reaches every replica without double-processing on the workqueue." />
+              <FeatureCard to="/docs/patterns/rpc" icon={<><path d="M2 5h8M10 5l-2-2M10 5l-2 2" /><path d="M14 11H6M6 11l2-2M6 11l2 2" /></>} name="RPC (Core & JetStream)" desc="Request/reply with deadlines, headers, and typed responses." />
 
               <div className="lp-feature-group">Reliability</div>
+              <FeatureCard to="/docs/patterns/ordered-events" icon={<><circle cx="8" cy="8" r="5.5" /><path d="M8 4v4l3 2" /></>} name="Ordered delivery" desc="Per-key ordering on the same partition with stable subject keys." />
               <FeatureCard to="/docs/guides/dead-letter-queue" icon={<><rect x="3" y="3" width="10" height="10" rx="1.5" /><path d="M6 8h4" /></>} name="Dead-letter queue" desc="Bounded retries, then a typed sink with original headers preserved." />
               <FeatureCard to="/docs/guides/graceful-shutdown" icon={<><path d="M2 12L8 4l6 8" /><path d="M5 12h6" /></>} name="Graceful shutdown" desc="Drains in-flight handlers, flushes acks, closes the connection." />
-              <FeatureCard to="/docs/guides/health-checks" icon={<><circle cx="8" cy="8" r="5.5" /><path d="M5 8l2 2 4-4" /></>} name="Health checks" desc={<>Drop-in <code>isHealthy()</code> indicator for k8s probes.</>} />
-
-              <div className="lp-feature-group">Patterns</div>
-              <FeatureCard to="/docs/patterns/rpc" icon={<><path d="M2 5h8M10 5l-2-2M10 5l-2 2" /><path d="M14 11H6M6 11l2-2M6 11l2 2" /></>} name="RPC (Core & JetStream)" desc="Request/reply with deadlines, headers, and typed responses." />
-              <FeatureCard to="/docs/guides/scheduling" icon={<><circle cx="8" cy="8" r="5.5" /><path d="M8 4v4l3 1" /></>} name="Scheduled messages" desc="Per-message delay or absolute deliver-at, native to the stream." />
-              <FeatureCard to="/docs/guides/per-message-ttl" icon={<><path d="M3 13L13 3" /><circle cx="4" cy="12" r="1" /><circle cx="12" cy="4" r="1" /></>} name="Per-message TTL" desc="Expire stale messages before they reach a consumer." />
 
               <div className="lp-feature-group">Observability</div>
-              <FeatureCard to="/docs/guides/distributed-tracing" icon={<><path d="M2 8h12" /><circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" /></>} name="Distributed tracing" desc="W3C trace context on every hop. OpenTelemetry-compatible." />
-              <FeatureCard to="/docs/reference/header-contract" icon={<path d="M3 12V4M3 4h6l4 4-4 4H3" />} name="Header contract" desc="Stable, documented header schema for tracing & correlation." />
-              <FeatureCard to="/docs/guides/lifecycle-hooks" icon={<><rect x="2" y="3" width="12" height="10" rx="1.5" /><path d="M2 6h12M5 9h6" /></>} name="Lifecycle hooks" desc={<>Subscribe to <code>TransportEvent</code> for ack, nak, redelivery.</>} />
+              <FeatureCard to="/docs/guides/health-checks" icon={<><circle cx="8" cy="8" r="5.5" /><path d="M5 8l2 2 4-4" /></>} name="Health checks" desc={<>Drop-in <code>isHealthy()</code> indicator for k8s probes.</>} />
+              <FeatureCard to="/docs/observability/tracing" icon={<><path d="M2 8h12" /><circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" /></>} name="Distributed tracing" desc="W3C trace context on every hop. OpenTelemetry-compatible." />
+              <FeatureCard to="/docs/observability/metrics" icon={<><path d="M2 13L5 9L8 11L13 4" /><circle cx="13" cy="4" r="1" /></>} name="Prometheus metrics" desc="Throughput, latency, lag — zero-config with prom-client." />
+            </Reveal>
+            <Reveal style={{ marginTop: 24, textAlign: 'center' }}>
+              <Link className="lp-features-more" to="/docs/">
+                Scheduling, TTL, lifecycle hooks, and more in the docs
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <path d="M3 8h10M9 4l4 4-4 4" />
+                </svg>
+              </Link>
             </Reveal>
           </div>
         </section>
@@ -582,8 +599,8 @@ export default function Home() {
         <section className="lp-section" style={{ padding: '80px 0' }}>
           <div className="lp-container" style={{ textAlign: 'center' }}>
             <Reveal>
-              <h2 className="lp-section-title" style={{ margin: '0 auto 16px' }}>Read the docs. Ship the code.</h2>
-              <p className="lp-section-sub" style={{ margin: '0 auto 32px' }}>Five-minute quick start. Then drop into your existing NestJS module graph.</p>
+              <h2 className="lp-section-title" style={{ margin: '0 auto 16px' }}>Quick start.</h2>
+              <p className="lp-section-sub" style={{ margin: '0 auto 32px' }}>Drops into your existing NestJS module graph.</p>
               <div className="lp-hero-ctas" style={{ justifyContent: 'center' }}>
                 <Link className="lp-btn lp-btn-primary" to="/docs/getting-started/quick-start">
                   Quick start
@@ -603,7 +620,7 @@ export default function Home() {
                   <BrandMark />
                   <span>nestjs-jetstream</span>
                 </div>
-                <p>A production NATS JetStream transport for NestJS — by Horizon Republic.</p>
+                <p>NATS JetStream as a NestJS transport. Maintained by <a href="https://horizon-republic.dev" target="_blank" rel="noopener noreferrer">Horizon Republic</a>.</p>
               </div>
               <div className="lp-footer-col">
                 <h4>Docs</h4>
@@ -630,7 +647,6 @@ export default function Home() {
             <div className="lp-footer-bar">
               <span>MIT · © {new Date().getFullYear()} Horizon Republic</span>
               <span className="lp-footer-meta">
-                <span className="lp-footer-status"><span className="lp-footer-status-dot" /> All systems operational</span>
                 <span><strong>{versionLabel}</strong></span>
               </span>
             </div>

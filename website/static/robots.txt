@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-agent: Googlebot
 Allow: /
@@ -34,4 +35,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://horizonrepublic.github.io/nestjs-jetstream/sitemap.xml
+Sitemap: https://nestjs-jetstream.horizon-republic.dev/sitemap.xml

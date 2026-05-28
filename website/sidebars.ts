@@ -46,7 +46,6 @@ const sidebars: SidebarsConfig = {
       label: 'Production Basics',
       collapsed: false,
       items: [
-        'getting-started/module-configuration',
         'guides/dead-letter-queue',
         'guides/health-checks',
         'guides/graceful-shutdown',
@@ -54,14 +53,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Observability',
+      collapsed: false,
+      link: { type: 'doc', id: 'observability/index' },
+      items: ['observability/tracing', 'observability/metrics'],
+    },
+    {
+      type: 'category',
       label: 'Operations',
       collapsed: false,
-      items: [
-        'guides/lifecycle-hooks',
-        'guides/distributed-tracing',
-        'guides/stream-migration',
-        'guides/performance',
-      ],
+      items: ['guides/lifecycle-hooks', 'guides/stream-migration', 'guides/performance'],
     },
     'guides/troubleshooting',
     {
@@ -69,10 +70,12 @@ const sidebars: SidebarsConfig = {
       label: 'Reference',
       collapsed: true,
       items: [
+        'reference/module-configuration',
         'reference/naming-conventions',
         'reference/default-configs',
         'reference/edge-cases',
         'reference/header-contract',
+        'reference/release-notes',
       ],
     },
     {

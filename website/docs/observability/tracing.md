@@ -1,21 +1,27 @@
 ---
-sidebar_position: 7
+sidebar_position: 1
 sidebar_label: "Distributed Tracing"
-title: "Distributed Tracing with OpenTelemetry — NestJS JetStream Transport"
+title: "Distributed Tracing — NestJS JetStream Transport"
 description: "Built-in W3C Trace Context propagation and OpenTelemetry spans for every publish, consume, and RPC round-trip. Works zero-config with Sentry, Datadog, Jaeger, Tempo, Honeycomb, and any OTel-compatible APM."
 schema:
   type: Article
-  headline: "Distributed Tracing with OpenTelemetry — NestJS JetStream Transport"
+  headline: "Distributed Tracing — NestJS JetStream Transport"
   description: "Built-in W3C Trace Context propagation and OpenTelemetry spans for every publish, consume, and RPC round-trip."
   datePublished: "2026-04-24"
-  dateModified: "2026-04-24"
+  dateModified: "2026-05-27"
 ---
 
 # Distributed Tracing
 
 The transport produces OpenTelemetry spans for every publish, every consume, and every RPC round-trip. Trace context propagates through NATS message headers using the W3C Trace Context standard, so a single trace flows end-to-end across services regardless of language or runtime.
 
-## How to enable
+## Why this exists
+
+Aggregate metrics tell you the system is slow; traces tell you _which_ message was slow and _where_ it spent its time. When a customer reports a failed order, you want a single waterfall view that follows the request from `client.emit('orders.created')` through every consumer, RPC hop, and dead-letter branch — across multiple services if needed. That's what tracing is for.
+
+The library emits OpenTelemetry spans on the same paths the metrics surface counts. If you already run an APM (Sentry, Datadog, Honeycomb, Jaeger, Tempo, …), no transport-side configuration is required — traces appear the moment your application registers an OTel SDK.
+
+## Setup
 
 Tracing activates automatically the moment your application registers an OpenTelemetry SDK. **No transport-side configuration is required.** If no SDK is registered, the library's tracer calls are no-ops and there is zero runtime cost.
 
@@ -30,7 +36,7 @@ new NodeSDK({
 }).start();
 ```
 
-That's it. Spans appear in your OTel-compatible backend immediately.
+That's it. Spans appear in your backend immediately.
 
 ### Vendor cheat sheets
 
@@ -49,7 +55,7 @@ tracer.init({ service: 'orders-service' });
 ```
 
 ```ts
-// Jaeger via NodeSDK + OTLP
+// Jaeger / Tempo / OTel Collector — NodeSDK + OTLP
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 new NodeSDK({
@@ -58,16 +64,18 @@ new NodeSDK({
 }).start();
 ```
 
+### Disabled by default — zero overhead
+
+When no OpenTelemetry SDK is registered in the host application, every internal `trace.getTracer()` call resolves to a no-op tracer. The transport still walks through the span helpers, but each call exits on the first guard. There is no measurable overhead on the hot path, and `@opentelemetry/api` is declared as an optional peer dependency — applications that do not want tracing do not pay for it in their bundle either.
+
 ## What gets traced
 
 The default trace set covers the message-flow operations that map onto a distributed trace waterfall:
 
-| Trace kind          | Span kind  | When it fires                                       |
-|---------------------|------------|-----------------------------------------------------|
-| `publish`           | `PRODUCER` | Every `client.emit()` and the publish portion of an RPC `client.send()` |
-| `consume`           | `CONSUMER` | Every handler invocation. Retries produce additional spans with `messaging.nats.message.delivery_count > 1` |
-| `rpc.client.send`   | `CLIENT`   | Full RPC round-trip on the caller side, from publish through reply or timeout |
-| `dead_letter`       | `INTERNAL` | When a message exhausts `maxDeliver` and the DLQ flow fires |
+- **`publish`** &mdash; `PRODUCER` span. Fires for every `client.emit()` and for the publish portion of an RPC `client.send()`.
+- **`consume`** &mdash; `CONSUMER` span. Fires for every handler invocation. Retries produce additional spans with `messaging.nats.message.delivery_count > 1`.
+- **`rpc.client.send`** &mdash; `CLIENT` span. Covers the full RPC round-trip on the caller side, from publish through reply or timeout.
+- **`dead_letter`** &mdash; `INTERNAL` span. Fires when a message exhausts `maxDeliver` and the DLQ flow runs.
 
 Infrastructure trace kinds (connection lifecycle, self-healing, provisioning, migration, shutdown) exist in the `JetstreamTrace` enum but are off by default. Enable them explicitly when you need that level of detail.
 
@@ -90,10 +98,12 @@ JetstreamModule.forRoot({
 
 Use `traces: 'all'` to enable every kind, `traces: 'none'` to suppress span emission entirely while keeping context propagation alive.
 
+For an env-driven toggle, the option also accepts a plain boolean — `otel: true` for defaults, `otel: false` for `{ enabled: false }`.
+
 ## Configuration reference
 
 ```ts
-otel?: {
+otel?: boolean | {
   /** Master kill switch. @default true */
   enabled?: boolean;
 
@@ -133,10 +143,8 @@ otel?: {
 
 Handler errors are classified by exception type. The classifier drives **only** OpenTelemetry span status — it does not affect logs, hooks, or the reply envelope returned to the caller.
 
-| Thrown type                            | Span status                              |
-|----------------------------------------|------------------------------------------|
-| `RpcException` / `HttpException`       | `OK` + `jetstream.rpc.reply.has_error`, `jetstream.rpc.reply.error.code` attributes |
-| Bare `Error` / unknown                 | `ERROR` + `span.recordException(err)`    |
+- **`RpcException` / `HttpException`** &mdash; span status `OK`, with `jetstream.rpc.reply.has_error` and `jetstream.rpc.reply.error.code` attributes attached.
+- **Bare `Error` / unknown thrown value** &mdash; span status `ERROR`, with `span.recordException(err)` attached.
 
 This keeps APM error rates clean for business outcomes that are part of the contract (auth denials, validation failures) while loud-failing on real bugs and infrastructure problems. Override the default with a custom classifier when your team uses other primitives:
 

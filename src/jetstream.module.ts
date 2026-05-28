@@ -34,6 +34,7 @@ import {
   JETSTREAM_EVENT_BUS,
   JETSTREAM_OPTIONS,
 } from './jetstream.constants';
+import { JetstreamMetricsModule } from './metrics/metrics.module';
 import {
   CoreRpcServer,
   ConsumerProvider,
@@ -109,12 +110,14 @@ export class JetstreamModule implements OnApplicationShutdown {
     return {
       module: JetstreamModule,
       global: true,
+      imports: [JetstreamMetricsModule.forFeature()],
       providers,
       exports: [
         JETSTREAM_CONNECTION,
         JETSTREAM_CODEC,
         JETSTREAM_EVENT_BUS,
         JETSTREAM_OPTIONS,
+        PatternRegistry,
         ShutdownManager,
         JetstreamStrategy,
         JetstreamHealthIndicator,
@@ -138,13 +141,14 @@ export class JetstreamModule implements OnApplicationShutdown {
     return {
       module: JetstreamModule,
       global: true,
-      imports: asyncOptions.imports ?? [],
+      imports: [...(asyncOptions.imports ?? []), JetstreamMetricsModule.forFeature()],
       providers: [...asyncProviders, ...coreProviders],
       exports: [
         JETSTREAM_CONNECTION,
         JETSTREAM_CODEC,
         JETSTREAM_EVENT_BUS,
         JETSTREAM_OPTIONS,
+        PatternRegistry,
         ShutdownManager,
         JetstreamStrategy,
         JetstreamHealthIndicator,
